@@ -1,10 +1,10 @@
 use clap::Parser;
 use opentelemetry::global;
-use std::path::Path;
+
 use std::time::Duration;
 use tokio;
 use tokio::sync::{mpsc, oneshot};
-use tokio::{fs, spawn};
+use tokio::{spawn};
 use tracing::{span, Level};
 
 use adrnaln::config::Addresses;
