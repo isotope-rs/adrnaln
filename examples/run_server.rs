@@ -40,7 +40,7 @@ async fn main() {
             match sequence_rx.recv().await {
                 None => {}
                 Some(sequence) => {
-                    helper::write_sequence_to_file(sequence).await;
+                    helper::write_sequence_to_file(".",sequence).await;
                 }
             }
         }
