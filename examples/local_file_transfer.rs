@@ -1,6 +1,5 @@
 use clap::Parser;
 use opentelemetry::global;
-use opentelemetry::trace::Tracer;
 use std::path::Path;
 use std::time::Duration;
 use tokio;
@@ -16,6 +15,7 @@ struct Args {
     #[arg(short, long)]
     filepath: String,
 }
+mod helper;
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -54,18 +54,7 @@ async fn main() {
         match sequence_rx.recv().await {
             None => {}
             Some(sequence) => {
-                let mut bytes = vec![];
-                let mut filename = "".to_string();
-                for packets in &sequence.packets {
-                    bytes.extend(packets.clone().bytes);
-                    if filename.is_empty() {
-                        filename = packets.filename.clone();
-                    }
-                }
-                let path = Path::new(&filename);
-                fs::write(path, &bytes)
-                    .await
-                    .expect("Could not write file!");
+                helper::write_sequence_to_file(sequence).await;
             }
         }
         kill_tx.send(1).unwrap();

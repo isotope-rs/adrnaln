@@ -18,7 +18,7 @@ These structs contain chunks from input file and also have global metadata about
 
 `cargo test` to run a synthetic test.
 
-Run the example `cargo run --example send_file -- --filepath <FILEPATH>` ( This will currently spit the file into the cwd )
+Run the example `cargo run --example local_file_transfer -- --filepath <FILEPATH>` ( This will currently spit the file into the cwd )
 
 ### Performance
 
