@@ -17,12 +17,8 @@ opentelemetry = "0.22"
 opentelemetry_sdk  = { version = "0.22.1", features = ["rt-tokio"]}
 opentelemetry-otlp = "0.15.0"
 opentelemetry-semantic-conventions = "0.14.0"
-opentelemetry-stdout = { version = "0.3", features = ["trace"] }
 opentelemetry-jaeger-propagator = "0.1.0"
-opentelemetry-jaeger = { version = "*", features = ["rt-tokio"] }
-opentelemetry-zipkin = "0.20.0"
 tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
-tracing-opentelemetry = "0.23.0"
+signal-hook = "0.3.17"
 [dev-dependencies]
 env_logger = "*"

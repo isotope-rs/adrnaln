@@ -136,9 +136,6 @@ impl Server {
             match kill_rx.try_recv() {
                 Ok(_) => {
                     debug!("Killing server");
-                    tokio::task::spawn_blocking(opentelemetry::global::shutdown_tracer_provider)
-                        .await
-                        .expect("Error shutting down tracing provider");
                     return;
                 }
                 Err(_) => {}
@@ -239,7 +236,7 @@ mod test {
         spawn(async move {
             tokio::time::sleep(Duration::from_secs(1)).await;
             let seq = client
-                .build_sequence_from_file("examples/resources/fox.png")
+                .build_sequence_from_file("images/arch.png")
                 .await
                 .expect("File not loaded");
             client.send_sequence(seq).await.unwrap();

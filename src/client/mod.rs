@@ -7,7 +7,6 @@ use rand::Rng;
 use std::error::Error;
 use std::io::Read;
 use std::path::Path;
-use tokio::io::AsyncReadExt;
 use tokio::net::UdpSocket;
 
 pub struct Client {
