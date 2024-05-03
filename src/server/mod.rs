@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
+use std::ops::Deref;
+use std::sync::{Arc, Mutex};
 use tokio::spawn;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::{mpsc, oneshot};
@@ -26,55 +28,67 @@ impl Server {
     pub fn new(configuration: Configuration) -> Self {
         Self { configuration }
     }
-    #[instrument]
-    async fn sequence_reassemble(
+
+    #[instrument(skip_all)]
+    async fn assemble(self, packet: Packet, sequence_capture: Arc<Mutex<HashMap<i64, Sequence>>>) -> Option<Sequence> {
+        let sequence_id = packet.get_sequence_id().clone();
+        let mut sequence_db = sequence_capture.lock().unwrap();
+        let sequence = sequence_db.get_mut(&sequence_id);
+        match sequence {
+            None => {
+                // Let's add that sequence in
+                sequence_db.insert(
+                            sequence_id,
+                            Sequence {
+                                sequence_id,
+                                total_size: packet.sequence_len,
+                                packets: vec![packet],
+                            },
+                        );
+            }
+            Some(found_sequence) => {
+                if packet.get_bytes_len() == 0 {
+                    // the sequence is complete, let's return it
+                    found_sequence
+                            .packets
+                            .sort_by(|a, b| a.packet_num.cmp(&b.packet_num));
+                    if !found_sequence.is_complete() {
+                        panic!("Sequence is not ordered correctly");
+                    }
+                   return Some(Sequence{
+                       sequence_id,
+                       total_size: found_sequence.total_size,
+                       packets: found_sequence.packets.clone(),
+                   })
+                }
+                found_sequence.packets.push(packet);
+            }
+        }
+        None
+    }
+    #[instrument(skip_all)]
+    async fn start_sequence_reassemble(
         self,
         mut packet_rx: Receiver<Packet>,
         receiver: Sender<Sequence>,
     ) {
-        let mut sequence_capture: HashMap<i64, Sequence> = HashMap::new();
-
+        let sequence_capture: Arc<Mutex<HashMap<i64, Sequence>>> = Arc::new(Mutex::new(HashMap::new()));
         loop {
             let f = packet_rx.recv().await;
             match f {
                 d => match d {
                     None => {}
                     Some(packet) => {
-                        let sequence_id = packet.get_sequence_id().clone();
-                        if packet.get_bytes_len() == 0 {
-                            let sequence = sequence_capture.get_mut(&sequence_id).unwrap();
-                            sequence
-                                .packets
-                                .sort_by(|a, b| a.packet_num.cmp(&b.packet_num));
-                            if !sequence.is_complete() {
-                                panic!("Sequence is not ordered correctly");
-                            }
-                            receiver
-                                .send(Sequence {
-                                    sequence_id,
-                                    total_size: sequence.total_size,
-                                    packets: sequence.packets.clone(),
-                                })
-                                .await
-                                .unwrap();
-                        }
-                        if sequence_id != 0 {
-                            if sequence_capture.contains_key(&sequence_id) {
-                                sequence_capture
-                                    .get_mut(&sequence_id)
-                                    .unwrap()
-                                    .packets
-                                    .push(packet);
-                            } else {
-                                let packet = packet.clone();
-                                sequence_capture.insert(
-                                    sequence_id,
-                                    Sequence {
-                                        sequence_id,
-                                        total_size: packet.sequence_len,
-                                        packets: vec![packet],
-                                    },
-                                );
+                        let sequence = sequence_capture.clone();
+                        let me = self.clone();
+                        let maybe_sequence = me.assemble(packet,sequence).await;
+                        match maybe_sequence {
+                            None => {}
+                            Some(sequence) => {
+                                    receiver
+                                    .send(sequence)
+                                    .await
+                                    .unwrap();
                             }
                         }
                     }
@@ -83,7 +97,7 @@ impl Server {
         }
     }
 
-    #[instrument]
+    #[instrument(skip_all)]
     pub async fn process_buffer(&mut self,packet_tx: Sender<Packet>, buf: [u8; 9134]) {
         let pk = Packet::from_bytes(buf);
         info!("Sending Packet of sequence {}", pk.sequence_id);
@@ -98,7 +112,7 @@ impl Server {
             let me_too = self.clone();
             async move {
                 // move the sequence_rx ownership
-                me.sequence_reassemble(packet_rx, me_too.configuration.sequence_tx)
+                me.start_sequence_reassemble(packet_rx, me_too.configuration.sequence_tx)
                     .await;
             }
         });
