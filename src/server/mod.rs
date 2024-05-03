@@ -6,8 +6,7 @@ use tokio::spawn;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::sleep;
-use tracing::info;
-
+use tracing::{info, instrument};
 use crate::client::sequence::Sequence;
 use crate::config::Configuration;
 use crate::packet::Packet;
@@ -23,10 +22,11 @@ pub enum ServerState {
 }
 
 impl Server {
+    #[instrument]
     pub fn new(configuration: Configuration) -> Self {
         Self { configuration }
     }
-    #[tracing::instrument]
+    #[instrument]
     async fn sequence_reassemble(
         self,
         mut packet_rx: Receiver<Packet>,
@@ -82,7 +82,14 @@ impl Server {
             }
         }
     }
-    #[tracing::instrument]
+
+    #[instrument]
+    pub async fn process_buffer(&mut self,packet_tx: Sender<Packet>, buf: [u8; 9134]) {
+        let pk = Packet::from_bytes(buf);
+        info!("Sending Packet of sequence {}", pk.sequence_id);
+        packet_tx.send(pk).await.unwrap();
+    }
+    #[instrument]
     pub async fn start(&mut self, mut kill_rx: oneshot::Receiver<i64>) {
         // start the async reassembling
         let (packet_tx, packet_rx) = mpsc::channel::<Packet>(1000);
@@ -100,7 +107,6 @@ impl Server {
             let mut buf = [0; 9134];
             let _me = self.clone();
             let packet_tx = packet_tx.clone();
-
             match kill_rx.try_recv() {
                 Ok(_) => {
                     info!("Killing server");
@@ -112,14 +118,12 @@ impl Server {
             match s {
                 Ok((len, _)) => {
                     if len > 0 {
-                        tokio::spawn(async move {
-                            info!("Packet from {} Bytes", len);
-                            let pk = Packet::from_bytes(buf);
-                            info!("Sending Packet of sequence {}", pk.sequence_id);
-                            packet_tx.send(pk).await.unwrap();
-                        })
-                        .await
-                        .expect("Could not spawn packet send");
+                        spawn({
+                        let mut me = self.clone();
+                            async move {
+                                me.process_buffer(packet_tx, buf).await;
+                            }
+                        });
                     }
                 }
                 Err(e) => {
@@ -131,6 +135,7 @@ impl Server {
             sleep(self.clone().configuration.server_sleep_time()).await;
         }
     }
+    #[instrument]
     fn new_udp_reuse_port(&self, local_addr: SocketAddr) -> UdpSocket {
         let udp_sock = socket2::Socket::new(
             if local_addr.is_ipv4() {

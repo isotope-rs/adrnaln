@@ -1,14 +1,37 @@
 mod helper;
-
-use adrnaln::config::{Addresses, Configuration};
-use adrnaln::server::Server;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use tokio::sync::{mpsc, oneshot};
+use clap::Parser;
 
-use log::debug;
-
+use adrnaln::config::Addresses;
+use adrnaln::{client::Client, config::Configuration, server::Server};
+use opentelemetry::global;
+use std::time::Duration;
+use tokio;
+use tokio::spawn;
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 #[tokio::main]
 async fn main() {
+    global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
+    // Sets up the machinery needed to export data to Jaeger
+    // There are other OTel crates that provide pipelines for the vendors
+    // mentioned earlier.
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name("adrnaln")
+        .install_simple()
+        .unwrap();
+
+    // Create a tracing layer with the configured tracer
+    let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    // The SubscriberExt and SubscriberInitExt traits are needed to extend the
+    // Registry to accept `opentelemetry (the OpenTelemetryLayer type).
+    tracing_subscriber::registry()
+        .with(opentelemetry)
+        // Continue logging to stdout
+        .with(fmt::Layer::default())
+        .try_init()
+        .unwrap();
     let la = "0.0.0.0:8085".parse().unwrap();
     let ra = "0.0.0.0:8085".parse().unwrap();
     let (sequence_tx, mut sequence_rx) = mpsc::channel(100);
@@ -25,7 +48,6 @@ async fn main() {
 
     tokio::spawn(async move {
         for _sig in signals.forever() {
-            debug!("Exiting server");
             break;
         }
         kill_tx.send(1).unwrap()

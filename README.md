@@ -26,7 +26,7 @@ Run the example `cargo run --example local_file_transfer -- --filepath <FILEPATH
 To analyze performance use `flamegraph` ( cargo install flamegraph )
 
 ```
-sudo cargo flamegraph --dev --example send_file -- --filepath <FILEPATH>
+sudo cargo flamegraph --dev --example local_file_transfer -- --filepath <FILEPATH>
 ```
 
 <img src="images/flamegraph.svg" width="450px;" />
