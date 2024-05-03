@@ -1,15 +1,11 @@
 mod helper;
 
-
-
 use adrnaln::config::{Addresses, Configuration};
 use adrnaln::server::Server;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use tokio::sync::{mpsc, oneshot};
 
 use log::debug;
-
-
 
 #[tokio::main]
 async fn main() {
@@ -40,7 +36,7 @@ async fn main() {
             match sequence_rx.recv().await {
                 None => {}
                 Some(sequence) => {
-                    helper::write_sequence_to_file(".",sequence).await;
+                    helper::write_sequence_to_file(".", sequence).await;
                 }
             }
         }

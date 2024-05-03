@@ -1,30 +1,18 @@
 use std::collections::HashMap;
-
 use std::io::ErrorKind;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
-
-use log::debug;
-
-use opentelemetry::{
-    global,
-    trace::{TraceContextExt, TraceError, Tracer},
-    KeyValue,
-};
-use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::{runtime, trace as sdktrace, Resource};
-use opentelemetry_semantic_conventions::resource::SERVICE_NAME;
 use tokio::spawn;
 use tokio::sync::mpsc::{Receiver, Sender};
-
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::sleep;
+use tracing::info;
 
 use crate::client::sequence::Sequence;
 use crate::config::Configuration;
 use crate::packet::Packet;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Server {
     configuration: Configuration,
 }
@@ -38,7 +26,7 @@ impl Server {
     pub fn new(configuration: Configuration) -> Self {
         Self { configuration }
     }
-
+    #[tracing::instrument]
     async fn sequence_reassemble(
         self,
         mut packet_rx: Receiver<Packet>,
@@ -94,28 +82,8 @@ impl Server {
             }
         }
     }
-
-    fn init_tracer(&mut self) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
-        opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(
-                opentelemetry_otlp::new_exporter()
-                    .tonic()
-                    .with_endpoint("http://localhost:4317"),
-            )
-            .with_trace_config(
-                sdktrace::config()
-                    .with_resource(Resource::new(vec![KeyValue::new(SERVICE_NAME, "adrnaln")])),
-            )
-            .install_batch(runtime::Tokio)
-    }
+    #[tracing::instrument]
     pub async fn start(&mut self, mut kill_rx: oneshot::Receiver<i64>) {
-        // Enable tracing
-        global::set_text_map_propagator(opentelemetry_jaeger_propagator::Propagator::new());
-        let _tracer = self.init_tracer().expect("Failed to initialize tracer.");
-        let tracer = global::tracer("server-tracer");
-
-        let _root_span = tracer.start("root-span");
         // start the async reassembling
         let (packet_tx, packet_rx) = mpsc::channel::<Packet>(1000);
         spawn({
@@ -135,7 +103,7 @@ impl Server {
 
             match kill_rx.try_recv() {
                 Ok(_) => {
-                    debug!("Killing server");
+                    info!("Killing server");
                     return;
                 }
                 Err(_) => {}
@@ -144,26 +112,11 @@ impl Server {
             match s {
                 Ok((len, _)) => {
                     if len > 0 {
-                        tokio::spawn({
-                            let buf = buf.clone();
-                            let tracer = global::tracer("server-tracer");
-                            async move {
-                                tracer
-                                    .in_span("packet-received", |cx| async move {
-                                        let span = cx.span();
-                                        let pk = Packet::from_bytes(buf);
-                                        span.set_attribute(KeyValue::new(
-                                            "packet_num",
-                                            pk.packet_num,
-                                        ));
-                                        span.set_attribute(KeyValue::new(
-                                            "sequence_id",
-                                            pk.sequence_id,
-                                        ));
-                                        packet_tx.send(pk).await.unwrap();
-                                    })
-                                    .await;
-                            }
+                        tokio::spawn(async move {
+                            info!("Packet from {} Bytes", len);
+                            let pk = Packet::from_bytes(buf);
+                            info!("Sending Packet of sequence {}", pk.sequence_id);
+                            packet_tx.send(pk).await.unwrap();
                         })
                         .await
                         .expect("Could not spawn packet send");

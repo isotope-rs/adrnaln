@@ -4,13 +4,13 @@ mod test {
 
     use std::time::Duration;
 
-    use tokio::spawn;
-    use tokio::sync::{mpsc, oneshot};
-    use adrnaln::client::Client;
     use adrnaln::client::sequence::Sequence;
+    use adrnaln::client::Client;
     use adrnaln::config::{Addresses, Configuration};
     use adrnaln::packet;
     use adrnaln::server::Server;
+    use tokio::spawn;
+    use tokio::sync::{mpsc, oneshot};
 
     #[tokio::test]
     async fn test_transmit_sequence() {
@@ -53,14 +53,13 @@ mod test {
         server.start(kill_rx).await;
     }
 
-
     #[tokio::test]
     async fn test_server_ipv4() {
         let la = "0.0.0.0:8085".parse().unwrap();
         let ra = "0.0.0.0:8085".parse().unwrap();
         let (sequence_tx, mut sequence_rx) = mpsc::channel(100);
-        let (kill_tx, kill_rx) = oneshot::channel();
-        let mut server = Server::new(Configuration {
+        let (kill_tx, _kill_rx) = oneshot::channel();
+        let _server = Server::new(Configuration {
             addresses: Addresses {
                 local_address: la,
                 remote_address: ra,
@@ -75,13 +74,16 @@ mod test {
                 local_address: ra,
                 remote_address: la,
             });
-            client.send_packet(packet::Packet {
-                packet_num: 1,
-                sequence_id: 1,
-                sequence_len: 1,
-                filename: "none".to_string(),
-                bytes: vec![1],
-            }).await.unwrap();
+            client
+                .send_packet(packet::Packet {
+                    packet_num: 1,
+                    sequence_id: 1,
+                    sequence_len: 1,
+                    filename: "none".to_string(),
+                    bytes: vec![1],
+                })
+                .await
+                .unwrap();
         });
 
         tokio::spawn(async move {
@@ -102,6 +104,5 @@ mod test {
                 }
             }
         });
-
     }
 }

@@ -22,6 +22,7 @@ Run the example `cargo run --example local_file_transfer -- --filepath <FILEPATH
 
 ### Performance
 
+#### Flamegraph 
 To analyze performance use `flamegraph` ( cargo install flamegraph )
 
 ```
@@ -29,3 +30,17 @@ sudo cargo flamegraph --dev --example send_file -- --filepath <FILEPATH>
 ```
 
 <img src="images/flamegraph.svg" width="450px;" />
+
+#### Tracing
+
+```
+docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
+```
+
+<img src="images/jaeger.png" width="750px;" />
+
+Create a trace:
+
+```
+RUST_LOG=trace RUSTFLAGS="--cfg tokio_unstable" cargo run --example local_file_transfer -- --filepath=examples/resources/fox.png
+```
