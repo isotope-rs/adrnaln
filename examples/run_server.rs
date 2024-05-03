@@ -1,14 +1,14 @@
 mod helper;
+use clap::Parser;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use tokio::sync::{mpsc, oneshot};
-use clap::Parser;
 
 use adrnaln::config::Addresses;
-use adrnaln::{client::Client, config::Configuration, server::Server};
+use adrnaln::{config::Configuration, server::Server};
 use opentelemetry::global;
-use std::time::Duration;
+
 use tokio;
-use tokio::spawn;
+
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 #[tokio::main]
 async fn main() {
