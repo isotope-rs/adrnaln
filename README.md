@@ -2,11 +2,7 @@
 
 Problem statement: It is desired to send any type of file across UDP with low latency or metadata overhead.
 
-```
-This library is a toy example of how that might be accomplished.
-It is a toy, as it does not implement retry mechanisms, backoff, telemetry etc..
-```
-
+This is a simple library that provides high level constructs to manage a sequence of packets streaming over UDP.
 ## Implementation
 
 <img src="images/arch.png" width="750px;" />
