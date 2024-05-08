@@ -1,5 +1,4 @@
 mod helper;
-use clap::Parser;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use tokio::sync::{mpsc, oneshot};
 
