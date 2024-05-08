@@ -2,7 +2,8 @@
 name = "adrnaln"
 version = "0.1.0"
 edition = "2021"
-
+description = "Adrnaln is a library for UDP packet transfers with high level constructs for managing sequences of data"
+license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
