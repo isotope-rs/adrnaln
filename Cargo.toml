@@ -1,6 +1,8 @@
 [package]
 name = "adrnaln"
+# <!---x-release-please-start-version-->
 version = "0.1.0"
+# <!---x-release-please-end-->
 edition = "2021"
 description = "Adrnaln is a library for UDP packet transfers with high level constructs for managing sequences of data"
 license = "MIT"
