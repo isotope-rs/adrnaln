@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/isotope-rs/adrnaln/compare/adrnaln-v0.1.1...adrnaln-v0.1.2) (2024-05-09)
+
+
+### Other
+
+* updated debugging logs ([7cdb3e0](https://github.com/isotope-rs/adrnaln/commit/7cdb3e0c8925991340c0f790ac803a138704240a))
+
 ## [0.1.1](https://github.com/isotope-rs/adrnaln/compare/adrnaln-v0.1.0...adrnaln-v0.1.1) (2024-05-08)
 
 
