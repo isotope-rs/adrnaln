@@ -41,6 +41,7 @@ impl Server {
         match sequence {
             None => {
                 // Let's add that sequence in
+                info!("Inserting Packet {} into new Sequence {}", packet.packet_num, sequence_id);
                 sequence_db.insert(
                     sequence_id,
                     Sequence {
@@ -52,7 +53,7 @@ impl Server {
             }
             Some(found_sequence) => {
                 if packet.get_bytes_len() == 0 {
-                    // the sequence is complete, let's return it
+                    info!("Completed Sequence {}", found_sequence.sequence_id);
                     found_sequence
                         .packets
                         .sort_by(|a, b| a.packet_num.cmp(&b.packet_num));
@@ -102,7 +103,7 @@ impl Server {
     #[instrument(skip_all)]
     pub async fn process_buffer(&mut self, packet_tx: Sender<Packet>, buf: [u8; 9134]) {
         let pk = Packet::from_bytes(buf);
-        info!("Sending Packet of sequence {}", pk.sequence_id);
+        info!("Sending Packet {} of sequence {}", pk.packet_num, pk.sequence_id);
         packet_tx.send(pk).await.unwrap();
     }
     #[instrument]
