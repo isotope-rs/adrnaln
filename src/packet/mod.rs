@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 pub(crate) const MAX_BUFFER_SIZE: usize = 9126;
 pub(crate) const SEQUENCE_SIZE: usize = 8;
-
 pub(crate) const PACKET_NUM_SIZE: usize = 8;
 pub(crate) const FILENAME_SIZE: usize = 255;
 pub(crate) const ACTUAL_BUFFER_SIZE: usize =
@@ -12,6 +11,7 @@ pub struct Packet {
     pub sequence_id: i64,
     pub sequence_len: usize,
     pub filename: String,
+    #[serde(with = "serde_bytes")]
     pub bytes: Vec<u8>,
 }
 
