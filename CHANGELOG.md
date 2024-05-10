@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.3](https://github.com/isotope-rs/adrnaln/compare/adrnaln-v0.1.2...adrnaln-v0.1.3) (2024-05-10)
+
+
+### Features
+
+* added serde_bytes ([139bafd](https://github.com/isotope-rs/adrnaln/commit/139bafd8e3abbb1c075fecd2d392a74e78153e90))
+
+
+### Other
+
+* added picture ([10f1d34](https://github.com/isotope-rs/adrnaln/commit/10f1d34edcdbb974bfe8262a3f997cc02258a30e))
+* additional instrumentation ([472f61a](https://github.com/isotope-rs/adrnaln/commit/472f61a604b9f7214d8cb318c15c16525f6620cf))
+* updated arch diagram ([1120e2d](https://github.com/isotope-rs/adrnaln/commit/1120e2dae40c911177e8b3dd1b26d49790520a32))
+* updated flamegraph ([58e1ae5](https://github.com/isotope-rs/adrnaln/commit/58e1ae55c6ae458de58e7130b1d5221d41cce7ce))
+
 ## [0.1.2](https://github.com/isotope-rs/adrnaln/compare/adrnaln-v0.1.1...adrnaln-v0.1.2) (2024-05-09)
 
 
