@@ -5,6 +5,8 @@ Problem statement: It is desired to send any type of file across UDP with low la
 This is a simple library that provides high level constructs to manage a sequence of packets streaming over UDP.
 ## Implementation
 
+<img src="images/arch-2.png" width="750px;" />
+
 <img src="images/arch.png" width="750px;" />
 
 This library uses `bincode` to assist in the serial/deseralisation of `Packet` structs.
