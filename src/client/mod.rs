@@ -8,7 +8,9 @@ use std::error::Error;
 use std::io::Read;
 use std::path::Path;
 use tokio::net::UdpSocket;
+use tracing::instrument;
 
+#[derive(Debug)]
 pub struct Client {
     addresses: Addresses,
 }
@@ -17,6 +19,7 @@ impl Client {
     pub fn new(addresses: Addresses) -> Self {
         Self { addresses }
     }
+    #[instrument(skip_all)]
     pub async fn send_packet(&self, packet: Packet) -> Result<(), Box<dyn Error + Send>> {
         let socket = UdpSocket::bind(self.addresses.local_address).await.unwrap();
         socket
@@ -30,12 +33,14 @@ impl Client {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub async fn send_sequence(&self, sequence: Sequence) -> Result<(), Box<dyn Error + Send>> {
         for member in sequence.packets {
             self.send_packet(member).await?
         }
         Ok(())
     }
+    #[instrument]
     pub async fn build_sequence_from_file(
         &self,
         filename: &str,
